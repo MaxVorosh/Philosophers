@@ -3,6 +3,7 @@ import kotlinx.coroutines.delay
 import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import java.util.concurrent.CountDownLatch
 
 class Table {
     val forks: MutableList<AtomicInteger> = mutableListOf()
@@ -28,10 +29,10 @@ class Table {
         }
         val waiterPermission = (!isWaiter || forksCount > 1)
         val timeLimit = philosophers[philosopher].thoughts >= 20
-        if (forks[philosopher].get() == 1 && philosophers[philosopher].stage == 0 && waiterPermission) {
+        if (forks[philosopher].get() == 1 && philosophers[philosopher].stage == 0 && waiterPermission && !timeLimit) {
             forks[philosopher].decrementAndGet()
             philosophers[philosopher].takeLeftFork()
-        } else if (forks[(philosopher + 1) % forks.size].get() == 1 && philosophers[philosopher].stage == 1 && waiterPermission) {
+        } else if (forks[(philosopher + 1) % forks.size].get() == 1 && philosophers[philosopher].stage == 1 && waiterPermission && !timeLimit) {
             forks[(philosopher + 1) % forks.size].decrementAndGet()
             philosophers[philosopher].takeRightFork()
         } else if (philosophers[philosopher].prepareToEat() && philosophers[philosopher].stage == 2) {
@@ -50,7 +51,9 @@ class Table {
 
     suspend fun dinner(isNaive: Boolean) = coroutineScope {
         for (i: Int in 0..size - 1) {
-            launch { action(i, isNaive, 0) }
+            launch {
+                action(i, isNaive, 0)
+            }
         }
     }
 
