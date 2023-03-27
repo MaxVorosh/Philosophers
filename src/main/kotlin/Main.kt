@@ -9,6 +9,7 @@ class Table {
     val forks: MutableList<AtomicInteger> = mutableListOf()
     val philosophers: MutableList<Philosopher> = mutableListOf()
     val size: Int = 5
+    var forksCount: AtomicInteger = AtomicInteger(size)
 
     init {
         for (i: Int in 0..size - 1) {
@@ -21,27 +22,25 @@ class Table {
         if (counter > 1000) {
             return
         }
-        var forksCount = 0
-        if (isWaiter) {
-            for (i: Int in 0..size - 1) {
-                forksCount += forks[i].get()
-            }
-        }
-        val waiterPermission = (!isWaiter || forksCount > 1)
+        val waiterPermission = (!isWaiter || forksCount.get() > 1)
         val timeLimit = philosophers[philosopher].thoughts >= 20
         if (forks[philosopher].get() == 1 && philosophers[philosopher].stage == 0 && waiterPermission && !timeLimit) {
             forks[philosopher].decrementAndGet()
+            forksCount.decrementAndGet()
             philosophers[philosopher].takeLeftFork()
         } else if (forks[(philosopher + 1) % forks.size].get() == 1 && philosophers[philosopher].stage == 1 && waiterPermission && !timeLimit) {
             forks[(philosopher + 1) % forks.size].decrementAndGet()
+            forksCount.decrementAndGet()
             philosophers[philosopher].takeRightFork()
         } else if (philosophers[philosopher].prepareToEat() && philosophers[philosopher].stage == 2) {
             philosophers[philosopher].eat()
         } else if (forks[philosopher].get() == 0 && (philosophers[philosopher].stage == 3 || timeLimit)) {
             forks[philosopher].incrementAndGet()
+            forksCount.incrementAndGet()
             philosophers[philosopher].putLeftFork()
         } else if (forks[(philosopher + 1) % forks.size].get() == 0 && (philosophers[philosopher].stage == 4 || timeLimit)) {
             forks[(philosopher + 1) % forks.size].incrementAndGet()
+            forksCount.incrementAndGet()
             philosophers[philosopher].putRightFork()
         } else {
             philosophers[philosopher].think()
